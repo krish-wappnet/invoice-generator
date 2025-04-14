@@ -4,7 +4,7 @@ import { isPast } from 'date-fns';
 import { Link } from 'react-router-dom';
 
 const Invoices: React.FC = () => {
-  const { invoices, updateInvoice, clients } = useInvoice();
+  const { invoices, updateInvoice, clients, deleteInvoice } = useInvoice();
   const [filterClientId, setFilterClientId] = useState<string>('');
   const [filterStatus, setFilterStatus] = useState<string>('');
 
@@ -21,6 +21,12 @@ const Invoices: React.FC = () => {
     const matchesStatus = !filterStatus || invoice.status === filterStatus;
     return matchesClient && matchesStatus;
   });
+
+  const handleDelete = (id: string) => {
+    if (window.confirm('Are you sure you want to delete this invoice? This action cannot be undone.')) {
+      deleteInvoice(id).catch((error) => console.error('Failed to delete invoice:', error));
+    }
+  };
 
   return (
     <div className="container mx-auto p-4 max-w-4xl">
@@ -111,13 +117,19 @@ const Invoices: React.FC = () => {
                     <option value="Overdue">Overdue</option>
                   </select>
                 </td>
-                <td className="border-b p-3">
+                <td className="border-b p-3 flex space-x-2">
                   <Link
                     to={`/preview/${invoice.id.toString()}`}
                     className="bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600 transition duration-200 text-sm"
                   >
                     Preview
                   </Link>
+                  <button
+                    onClick={() => handleDelete(invoice.id.toString())}
+                    className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600 transition duration-200 text-sm"
+                  >
+                    Delete
+                  </button>
                 </td>
               </tr>
             ))}
