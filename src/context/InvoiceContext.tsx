@@ -6,6 +6,7 @@ import { Client, Invoice } from '../types';
 interface InvoiceContextType {
   clients: Client[];
   invoices: Invoice[];
+  loading: boolean;
   addClient: (client: Omit<Client, 'id'>) => Promise<void>;
   updateClient: (id: string, client: Omit<Client, 'id'>) => Promise<void>;
   deleteClient: (id: string) => Promise<void>;
@@ -20,12 +21,21 @@ const InvoiceContext = createContext<InvoiceContextType | undefined>(undefined);
 export const InvoiceProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [clients, setClients] = useState<Client[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    db.clients.toArray().then(setClients);
-    db.invoices.toArray().then((invoicesFromDb) =>
-      setInvoices(invoicesFromDb.map((i) => ({ ...i, id: String(i.id) })))
-    );
+    const fetchData = async () => {
+      try {
+        const [clientData, invoiceData] = await Promise.all([db.clients.toArray(), db.invoices.toArray()]);
+        setClients(clientData);
+        setInvoices(invoiceData.map((i) => ({ ...i, id: String(i.id) })));
+      } catch (error) {
+        console.error('Failed to load data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
   }, []);
 
   const addClient = async (client: Omit<Client, 'id'>) => {
@@ -67,7 +77,6 @@ export const InvoiceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     try {
       console.log('Adding invoice (input):', invoice);
 
-      // Validate required fields
       const requiredFields: (keyof Omit<Invoice, 'id'>)[] = [
         'clientId',
         'invoiceNumber',
@@ -91,14 +100,13 @@ export const InvoiceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         const newNumber = await getNextInvoiceNumber();
         finalInvoice = { ...invoice, invoiceNumber: newNumber };
       }
-      // Assert compatibility with dexie.add, which handles auto-increment
-      const id = await db.invoices.add(finalInvoice as Invoice); // Type assertion
+      const id = await db.invoices.add(finalInvoice as Invoice);
       const updatedInvoices = await db.invoices.toArray();
       setInvoices(updatedInvoices.map((i) => ({ ...i, id: String(i.id) })));
       return String(id);
     } catch (error) {
-      console.error('Failed to add invoice:', error); // Log detailed error
-      throw error; // Re-throw to propagate the error
+      console.error('Failed to add invoice:', error);
+      throw error;
     }
   };
 
@@ -137,6 +145,7 @@ export const InvoiceProvider: React.FC<{ children: React.ReactNode }> = ({ child
       value={{
         clients,
         invoices,
+        loading,
         addClient,
         updateClient,
         deleteClient,

@@ -1,9 +1,6 @@
-// src/components/InvoicePreview.tsx
 import { forwardRef } from 'react';
 import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
-import { Invoice } from '../types';
-import { useInvoice } from '../context/InvoiceContext';
-
+import { Invoice, Client } from '../types';
 
 // PDF Styles
 const styles = StyleSheet.create({
@@ -20,17 +17,17 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   table: {
-    flexDirection: 'column', // Use flexDirection instead of display: 'table'
+    flexDirection: 'column',
     width: '100%',
     borderStyle: 'solid',
     borderWidth: 1,
     borderColor: '#bfbfbf',
   },
   tableRow: {
-    flexDirection: 'row', // Use flexDirection instead of display: 'row'
+    flexDirection: 'row',
   },
   tableCol: {
-    width: '25%', // Equal width for four columns
+    width: '25%',
     borderStyle: 'solid',
     borderWidth: 1,
     borderColor: '#bfbfbf',
@@ -42,10 +39,7 @@ const styles = StyleSheet.create({
 });
 
 // PDF Document Component
-const PDFInvoice = ({ invoice }: { invoice: Invoice }) => {
-  const { clients } = useInvoice();
-  const client = clients.find((c) => c.id === invoice.clientId);
-
+const PDFInvoice = ({ invoice, client }: { invoice: Invoice; client?: Client | null }) => {
   const calculateTotal = () => {
     let total = invoice.total || 0;
     if (invoice.tax) total += (total * invoice.tax) / 100;
@@ -120,12 +114,11 @@ const PDFInvoice = ({ invoice }: { invoice: Invoice }) => {
 // Original Component for UI Rendering
 interface InvoicePreviewProps {
   invoice: Invoice;
+  client?: Client | null | undefined; // Updated to accept null or undefined
 }
 
 const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>((props, ref) => {
-  const { invoice } = props;
-  const { clients } = useInvoice();
-  const client = clients.find((c) => c.id === invoice.clientId);
+  const { invoice, client } = props;
 
   const calculateTotal = () => {
     let total = invoice.total || 0;
