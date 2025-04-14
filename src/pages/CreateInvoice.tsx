@@ -6,47 +6,44 @@ import { Invoice } from '../types';
 import { format } from 'date-fns';
 import InvoiceForm from '../components/InvoiceForm';
 import { useInvoice } from '../context/InvoiceContext';
-// Removed generatePDF import since @react-pdf/renderer handles it
 
 const CreateInvoice: React.FC = () => {
-  const { addInvoice, getNextInvoiceNumber } = useInvoice();
+  const { addInvoice, getNextInvoiceNumber, clients } = useInvoice();
   const [isPreview, setIsPreview] = useState(false);
   const [invoice, setInvoice] = useState<Partial<Invoice>>({
     clientId: '',
     date: format(new Date(), 'yyyy-MM-dd'),
     dueDate: format(new Date(), 'yyyy-MM-dd'),
-    items: [],
+    items: [], // Default to empty array to avoid undefined
     total: 0,
     status: 'Draft',
     template: 'Modern',
     currency: 'USD',
   });
-
   const componentRef = useRef<HTMLDivElement>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const fetchInvoiceNumber = async () => {
-      const invoiceNumber = await getNextInvoiceNumber();
-      setInvoice((prev) => ({ ...prev, invoiceNumber }));
+      try {
+        const invoiceNumber = await getNextInvoiceNumber();
+        setInvoice((prev) => ({ ...prev, invoiceNumber: invoiceNumber || 'TEMP-0001' }));
+      } catch (error) {
+        console.error('Failed to fetch invoice number:', error);
+        setInvoice((prev) => ({ ...prev, invoiceNumber: 'TEMP-0001' }));
+      }
     };
     fetchInvoiceNumber();
   }, [getNextInvoiceNumber]);
 
   const handleSubmit = async () => {
-    if (
-      !invoice.invoiceNumber ||
-      !invoice.clientId ||
-      !invoice.items?.length ||
-      !invoice.date ||
-      !invoice.dueDate ||
-      !invoice.status ||
-      !invoice.template ||
-      !invoice.currency ||
-      invoice.total === undefined
-    ) {
-      alert('Please fill in all required fields');
+    const requiredFields: (keyof Invoice)[] = ['invoiceNumber', 'clientId', 'items', 'date', 'dueDate', 'status', 'template', 'currency', 'total'];
+    const missingFields = requiredFields.filter((field) => !invoice[field]);
+    if (missingFields.length > 0) {
+      alert(`Please fill in all required fields: ${missingFields.join(', ')}`);
       return;
     }
+    setIsSubmitting(true);
     try {
       await addInvoice(invoice as Omit<Invoice, 'id'>);
       const newInvoiceNumber = await getNextInvoiceNumber();
@@ -65,31 +62,68 @@ const CreateInvoice: React.FC = () => {
     } catch (error) {
       console.error('Submission failed:', error);
       alert('Failed to create invoice. The invoice number may already exist.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
+  const handleCancel = () => {
+    setIsPreview(false);
+  };
+
+  // Ensure invoice is valid before rendering PDFDownloadLink
+  const isInvoiceValidForPDF = !!invoice.invoiceNumber && (invoice.items?.length || 0) > 0;
+
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Create Invoice</h1>
-      <button
-        onClick={() => setIsPreview(!isPreview)}
-        className="mb-4 bg-gray-500 text-white p-2 rounded"
-      >
-        {isPreview ? 'Edit' : 'Preview'}
-      </button>
+    <div className="container mx-auto p-4 max-w-4xl">
+      <h1 className="text-3xl font-bold text-gray-800 mb-6">Create Invoice</h1>
+      <div className="mb-4 flex space-x-4">
+        <button
+          onClick={() => setIsPreview(!isPreview)}
+          className={`px-4 py-2 rounded ${isPreview ? 'bg-gray-500' : 'bg-blue-500'} text-white hover:bg-${isPreview ? 'gray-600' : 'blue-600'} transition duration-200 ${isSubmitting ? 'bg-gray-400 cursor-not-allowed' : ''}`}
+          disabled={isSubmitting}
+        >
+          {isPreview ? 'Back to Editing' : 'Preview'}
+        </button>
+        {isPreview && (
+          <button
+            onClick={handleCancel}
+            className={`px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition duration-200 ${isSubmitting ? 'bg-gray-400 cursor-not-allowed' : ''}`}
+            disabled={isSubmitting}
+          >
+            Cancel
+          </button>
+        )}
+      </div>
       {isPreview ? (
-        <div>
+        <div className="bg-gray-50 p-6 rounded-lg shadow-md">
+          <h2 className="text-xl font-semibold mb-4 text-gray-700">Preview Draft</h2>
           <InvoicePreview ref={componentRef} invoice={invoice as Invoice} />
-          <PDFDownloadLink document={<PDFInvoice invoice={invoice as Invoice} />} fileName={`invoice_${invoice.invoiceNumber}.pdf`}>
-            {({ loading }) => (loading ? 'Generating PDF...' : 'Download PDF')}
-          </PDFDownloadLink>
+          <div className="mt-4">
+            {isInvoiceValidForPDF ? (
+              <PDFDownloadLink
+                document={<PDFInvoice invoice={invoice as Invoice} />}
+                fileName={`invoice_${invoice.invoiceNumber}.pdf`}
+                className={`bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition duration-200 ${isSubmitting ? 'bg-gray-400 cursor-not-allowed' : ''}`}
+              >
+                {({ loading }) => (loading || isSubmitting ? 'Generating...' : 'Download PDF')}
+              </PDFDownloadLink>
+            ) : (
+              <p className="text-red-500">Invoice data is incomplete for PDF generation.</p>
+            )}
+          </div>
         </div>
       ) : (
-        <InvoiceForm
-          invoice={invoice as Invoice}
-          setInvoice={(newInvoice: Partial<Invoice>) => setInvoice(newInvoice)}
-          onSubmit={handleSubmit}
-        />
+        <div className="bg-white p-6 rounded-lg shadow-md">
+          <h2 className="text-xl font-semibold mb-4 text-gray-700">Editing Draft</h2>
+          <InvoiceForm
+            invoice={invoice as Invoice}
+            setInvoice={(newInvoice: Partial<Invoice>) => setInvoice(newInvoice)}
+            onSubmit={handleSubmit}
+            clients={clients}
+            isSubmitting={isSubmitting}
+          />
+        </div>
       )}
     </div>
   );
