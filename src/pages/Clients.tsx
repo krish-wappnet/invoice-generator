@@ -3,12 +3,14 @@ import { useInvoice } from '../context/InvoiceContext';
 import ClientForm from '../components/ClientForm';
 import { Client } from '../types';
 import toast from 'react-hot-toast';
-import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { PencilIcon, TrashIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
+import { useNavigate } from 'react-router-dom'; // Import useNavigate for navigation
 
 const Clients: React.FC = () => {
   const { clients, addClient, deleteClient, updateClient } = useInvoice();
   const [isLoading, setIsLoading] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
+  const navigate = useNavigate(); // Hook for navigation
 
   const handleDelete = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this client?')) {
@@ -30,10 +32,22 @@ const Clients: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const handleBack = () => {
+    navigate('/'); // Navigate to root route
+  };
+
   return (
     <div className="container mx-auto p-6 max-w-6xl bg-white min-h-screen">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold text-black">Clients</h1>
+        <button
+          onClick={handleBack}
+          className="flex items-center space-x-1 px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition duration-200"
+          disabled={isLoading}
+        >
+          <ArrowLeftIcon className="h-4 w-4" />
+          <span>Back</span>
+        </button>
       </div>
 
       {/* Client Form */}

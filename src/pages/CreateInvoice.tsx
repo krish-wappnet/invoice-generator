@@ -6,6 +6,8 @@ import { Invoice } from '../types';
 import { format } from 'date-fns';
 import InvoiceForm from '../components/InvoiceForm';
 import { useInvoice } from '../context/InvoiceContext';
+import { useNavigate } from 'react-router-dom'; // Import useNavigate for navigation
+import { ArrowLeftIcon } from '@heroicons/react/24/outline'; // Import ArrowLeftIcon
 
 const CreateInvoice: React.FC = () => {
   const { addInvoice, getNextInvoiceNumber, clients } = useInvoice();
@@ -22,6 +24,7 @@ const CreateInvoice: React.FC = () => {
   });
   const componentRef = useRef<HTMLDivElement>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const navigate = useNavigate(); // Hook for navigation
 
   useEffect(() => {
     const fetchInvoiceNumber = async () => {
@@ -71,12 +74,26 @@ const CreateInvoice: React.FC = () => {
     setIsPreview(false);
   };
 
+  const handleBack = () => {
+    navigate('/'); // Navigate to root route
+  };
+
   // Ensure invoice is valid before rendering PDFDownloadLink
   const isInvoiceValidForPDF = !!invoice.invoiceNumber && (invoice.items?.length || 0) > 0;
 
   return (
     <div className="container mx-auto p-4 max-w-4xl">
-      <h1 className="text-3xl font-bold text-gray-800 mb-6">Create Invoice</h1>
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold text-black">Create Invoice</h1>
+        <button
+          onClick={handleBack}
+          className="flex items-center space-x-1 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition duration-200"
+          disabled={isSubmitting}
+        >
+          <ArrowLeftIcon className="h-5 w-5" />
+          <span>Back</span>
+        </button>
+      </div>
       <div className="mb-4 flex space-x-4">
         <button
           onClick={() => setIsPreview(!isPreview)}
@@ -115,7 +132,7 @@ const CreateInvoice: React.FC = () => {
         </div>
       ) : (
         <div className="bg-white p-6 rounded-lg shadow-md">
-          <h2 className="text-xl font-semibold mb-4 text-gray-700">Editing Draft</h2>
+          <h2 className="text-xl font-semibold mb-4 text-black">Editing Draft</h2>
           <InvoiceForm
             invoice={invoice as Invoice}
             setInvoice={(newInvoice: Partial<Invoice>) => setInvoice(newInvoice)}

@@ -76,7 +76,7 @@ const ClientForm: React.FC<ClientFormProps> = ({ onSubmit, initialData, isLoadin
           id="name"
           value={client.name}
           onChange={(e) => setClient({ ...client, name: e.target.value })}
-          className="peer w-full p-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition duration-200"
+          className="peer w-full p-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition duration-200 text-gray-900"
           placeholder=" "
           disabled={isLoading}
         />
@@ -97,7 +97,7 @@ const ClientForm: React.FC<ClientFormProps> = ({ onSubmit, initialData, isLoadin
           id="email"
           value={client.email}
           onChange={(e) => setClient({ ...client, email: e.target.value })}
-          className="peer w-full p-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition duration-200"
+          className="peer w-full p-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition duration-200 text-gray-900"
           placeholder=" "
           disabled={isLoading}
         />
@@ -117,7 +117,7 @@ const ClientForm: React.FC<ClientFormProps> = ({ onSubmit, initialData, isLoadin
           id="address"
           value={client.address}
           onChange={(e) => setClient({ ...client, address: e.target.value })}
-          className="peer w-full p-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition duration-200"
+          className="peer w-full p-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition duration-200 text-gray-900"
           placeholder=" "
           rows={4}
           disabled={isLoading}
@@ -136,7 +136,7 @@ const ClientForm: React.FC<ClientFormProps> = ({ onSubmit, initialData, isLoadin
           id="gst"
           value={client.gst}
           onChange={(e) => setClient({ ...client, gst: e.target.value })}
-          className="peer w-full p-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition duration-200"
+          className="peer w-full p-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition duration-200 text-gray-900"
           placeholder=" "
           disabled={isLoading}
         />
