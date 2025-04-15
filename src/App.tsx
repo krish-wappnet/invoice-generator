@@ -5,6 +5,7 @@ import Invoices from './pages/Invoices';
 import Clients from './pages/Clients';
 import CreateInvoice from './pages/CreateInvoice';
 import InvoicePreviewPage from './pages/InvoicePreviewPage'; // Updated import
+import { Toaster } from 'react-hot-toast';
 
 function App() {
   const [darkMode, setDarkMode] = useState(false);
@@ -13,6 +14,7 @@ function App() {
     <div className={darkMode ? 'dark' : ''}>
       <InvoiceProvider>
         <BrowserRouter>
+        <Toaster position="top-right" />
           <button
             onClick={() => setDarkMode(!darkMode)}
             className="fixed top-4 right-4 p-2 bg-gray-200 dark:bg-gray-800 rounded"

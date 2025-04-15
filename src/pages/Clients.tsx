@@ -1,45 +1,58 @@
 import React, { useState } from 'react';
 import { useInvoice } from '../context/InvoiceContext';
 import ClientForm from '../components/ClientForm';
-import { Client } from '../types'; // Ensure this import matches your types file
+import { Client } from '../types';
+import toast from 'react-hot-toast';
+import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 
 const Clients: React.FC = () => {
   const { clients, addClient, deleteClient, updateClient } = useInvoice();
   const [isLoading, setIsLoading] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this client?')) {
       setIsLoading(true);
-      deleteClient(id)
-        .catch((error) => console.error('Delete failed:', error))
-        .finally(() => setIsLoading(false));
+      try {
+        await deleteClient(id);
+        toast.success('Client deleted successfully');
+      } catch (error) {
+        console.error('Delete failed:', error);
+        toast.error('Failed to delete client');
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
   const handleEdit = (client: Client) => {
     setEditingClient(client);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
-    <div className="container mx-auto p-4 max-w-4xl">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-800">Clients</h1>
+    <div className="container mx-auto p-6 max-w-6xl bg-white min-h-screen">
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold text-black">Clients</h1>
       </div>
-      <div className="mb-6">
+
+      {/* Client Form */}
+      <div className="mb-10  text-white rounded-xl shadow-lg p-6 transition-all duration-300">
         <ClientForm
           onSubmit={async (clientData: Omit<Client, 'id'>) => {
             setIsLoading(true);
             try {
               if (editingClient) {
-                await updateClient(editingClient.id!, clientData); // Non-null assertion since editingClient is checked
+                await updateClient(editingClient.id!, clientData);
+                toast.success('Client updated successfully');
               } else {
                 await addClient(clientData);
+                toast.success('Client added successfully');
               }
               setEditingClient(null);
             } catch (error) {
               console.error('Submission failed:', error);
-              alert('Failed to save client. Please check the form and try again.');
+              toast.error('Failed to save client');
             } finally {
               setIsLoading(false);
             }
@@ -48,47 +61,78 @@ const Clients: React.FC = () => {
           isLoading={isLoading}
         />
       </div>
-      <div className="overflow-x-auto shadow-md rounded-lg">
-        <table className="w-full border-collapse bg-white">
-          <thead>
-            <tr className="bg-gray-100">
-              <th className="border-b p-3 text-left text-gray-600 font-semibold">Name</th>
-              <th className="border-b p-3 text-left text-gray-600 font-semibold">Email</th>
-              <th className="border-b p-3 text-left text-gray-600 font-semibold">Address</th>
-              <th className="border-b p-3 text-left text-gray-600 font-semibold">GST</th>
-              <th className="border-b p-3 text-left text-gray-600 font-semibold">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
+
+      {/* Client Grid */}
+      <div className="bg-white rounded-xl shadow-lg p-6">
+        {isLoading && (
+          <div className="flex justify-center py-6">
+            <svg
+              className="animate-spin h-8 w-8 text-blue-500"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              ></circle>
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8v8h8a8 8 0 01-16 0z"
+              ></path>
+            </svg>
+          </div>
+        )}
+        {clients.length === 0 && !isLoading ? (
+          <p className="text-center text-black py-6">
+            No clients found. Add a new client to get started!
+          </p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {clients.map((client) => (
-              <tr
+              <div
                 key={client.id}
-                className="hover:bg-gray-50 transition duration-200"
+                className="bg-white rounded-lg p-6 shadow-sm hover:shadow-md transition-all duration-300 transform hover:-translate-y-1"
               >
-                <td className="border-b p-3">{client.name}</td>
-                <td className="border-b p-3">{client.email}</td>
-                <td className="border-b p-3">{client.address}</td>
-                <td className="border-b p-3">{client.gst || 'N/A'}</td>
-                <td className="border-b p-3 flex space-x-2">
+                <h3 className="text-lg font-semibold text-black mb-2">{client.name}</h3>
+                <div className="space-y-2 text-sm text-black">
+                  <p>
+                    <span className="font-medium">Email:</span> {client.email}
+                  </p>
+                  <p>
+                    <span className="font-medium">Address:</span> {client.address}
+                  </p>
+                  <p>
+                    <span className="font-medium">GST:</span> {client.gst || 'N/A'}
+                  </p>
+                </div>
+                <div className="mt-4 flex space-x-3">
                   <button
                     onClick={() => handleEdit(client)}
-                    className="bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600 transition duration-200 text-sm"
+                    className="flex items-center space-x-1 px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition duration-200"
                     disabled={isLoading}
                   >
-                    Edit
+                    <PencilIcon className="h-4 w-4" />
+                    <span>Edit</span>
                   </button>
                   <button
-                    onClick={() => handleDelete(client.id as string)} // Type assertion to ensure string
-                    className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600 transition duration-200 text-sm"
+                    onClick={() => handleDelete(client.id as string)}
+                    className="flex items-center space-x-1 px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 transition duration-200"
                     disabled={isLoading}
                   >
-                    {isLoading ? 'Deleting...' : 'Delete'}
+                    <TrashIcon className="h-4 w-4" />
+                    <span>Delete</span>
                   </button>
-                </td>
-              </tr>
+                </div>
+              </div>
             ))}
-          </tbody>
-        </table>
+          </div>
+        )}
       </div>
     </div>
   );

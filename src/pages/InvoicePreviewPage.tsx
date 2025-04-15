@@ -5,7 +5,7 @@ import { Invoice, Client } from '../types';
 import InvoicePreview from '../components/InvoicePreview';
 import { PDFInvoice } from '../components/InvoicePreview';
 import { PDFDownloadLink } from '@react-pdf/renderer';
-import { generatePDF } from '../lib/pdf'; // Ensure this import is correct
+import { generatePDF } from '../lib/pdf';
 
 const InvoicePreviewPage: React.FC = () => {
   const { invoiceId } = useParams<{ invoiceId: string }>();
@@ -13,6 +13,7 @@ const InvoicePreviewPage: React.FC = () => {
   const previewRef = useRef<HTMLDivElement>(null);
   const [invoice, setInvoice] = useState<Invoice | null>(null);
   const [client, setClient] = useState<Client | null>(null);
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
 
   useEffect(() => {
     console.log('InvoicePreviewPage useEffect triggered with invoiceId:', invoiceId, 'invoices:', invoices, 'loading:', loading);
@@ -25,6 +26,64 @@ const InvoicePreviewPage: React.FC = () => {
       }
     }
   }, [invoiceId, invoices, clients, loading]);
+
+  // Print functionality
+  const handlePrint = () => {
+    if (previewRef.current) {
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        printWindow.document.write(`
+          <html>
+            <head>
+              <title>Print Invoice ${invoice?.invoiceNumber || ''}</title>
+              <style>
+                @media print {
+                  body { margin: 0; }
+                  .no-print { display: none; }
+                }
+              </style>
+            </head>
+            <body>
+              ${previewRef.current.innerHTML}
+            </body>
+          </html>
+        `);
+        printWindow.document.close();
+        printWindow.focus();
+        printWindow.print();
+        printWindow.close();
+      }
+    }
+  };
+
+  // Simulated email sending
+  const handleSendEmail = async () => {
+    if (!invoice || !client) {
+      alert('Invoice or client information is missing.');
+      return;
+    }
+
+    setIsSendingEmail(true);
+    try {
+      // Simulate API call to send email
+      await new Promise((resolve) => setTimeout(resolve, 1500)); // Simulate network delay
+      
+      // This is a simulation - in a real app, you'd make an API call here
+      console.log('Simulating email send:', {
+        to: client.email,
+        subject: `Invoice ${invoice.invoiceNumber} from Your Company`,
+        body: `Dear ${client.name},\n\nPlease find attached invoice ${invoice.invoiceNumber}.\n\nBest regards,\nYour Company`,
+        attachment: `invoice_${invoice.invoiceNumber}.pdf`,
+      });
+
+      alert('Email sent successfully! (This is a simulation)');
+    } catch (error) {
+      console.error('Email sending simulation failed:', error);
+      alert('Failed to send email. Please try again.');
+    } finally {
+      setIsSendingEmail(false);
+    }
+  };
 
   if (loading) {
     return <div>Loading invoices...</div>;
@@ -58,6 +117,20 @@ const InvoicePreviewPage: React.FC = () => {
           disabled={!previewRef.current || !invoice.invoiceNumber}
         >
           Download PDF (Custom)
+        </button>
+        <button
+          onClick={handlePrint}
+          className="bg-purple-500 text-white p-2 rounded hover:bg-purple-600"
+          disabled={!previewRef.current}
+        >
+          Print Invoice
+        </button>
+        <button
+          onClick={handleSendEmail}
+          className="bg-orange-500 text-white p-2 rounded hover:bg-orange-600"
+          disabled={isSendingEmail || !client?.email}
+        >
+          {isSendingEmail ? 'Sending Email...' : 'Send via Email'}
         </button>
       </div>
     </div>

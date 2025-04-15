@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useInvoice } from '../context/InvoiceContext';
-import { isPast } from 'date-fns';
+import dayjs from 'dayjs';
 import { Link } from 'react-router-dom';
 
 const Invoices: React.FC = () => {
@@ -10,7 +10,7 @@ const Invoices: React.FC = () => {
 
   useEffect(() => {
     invoices.forEach((invoice) => {
-      if (invoice.status === 'Sent' && isPast(new Date(invoice.dueDate))) {
+      if (invoice.status === 'Sent' && dayjs().isAfter(dayjs(invoice.dueDate))) {
         updateInvoice(invoice.id, { ...invoice, status: 'Overdue' });
       }
     });
